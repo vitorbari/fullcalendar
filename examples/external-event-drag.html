@@ -1,0 +1,135 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN""http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<head>
+<link rel='stylesheet' type='text/css' href='external-event-drag.css' />
+<!--<src>-->
+<link rel='stylesheet' type='text/css' href='../src/css/main.css' />
+<link rel='stylesheet' type='text/css' href='../src/css/grid.css' />
+<link rel='stylesheet' type='text/css' href='../src/css/agenda.css' />
+<script type='text/javascript' src='../src/jquery/jquery.js'></script>
+<script type='text/javascript' src='../src/jquery/ui.core.js'></script>
+<script type='text/javascript' src='../src/jquery/ui.draggable.js'></script>
+<script type='text/javascript' src='../src/jquery/ui.resizable.js'></script>
+<script type='text/javascript' src='../src/main.js'></script>
+<script type='text/javascript' src='../src/grid.js'></script>
+<script type='text/javascript' src='../src/agenda.js'></script>
+<script type='text/javascript' src='../src/view.js'></script>
+<script type='text/javascript' src='../src/util.js'></script>
+<script type='text/javascript' src='../src/fcdraggable.js'></script>
+<!--</src>-->
+<!--
+<dist>
+<link rel='stylesheet' type='text/css' href='../fullcalendar.css' />
+<script type='text/javascript' src='../jquery/jquery.js'></script>
+<script type='text/javascript' src='../jquery/ui.core.js'></script>
+<script type='text/javascript' src='../jquery/ui.draggable.js'></script>
+<script type='text/javascript' src='../jquery/ui.resizable.js'></script>
+<script type='text/javascript' src='../fullcalendar.min.js'></script>
+</dist>
+-->
+<script type='text/javascript'>
+
+	$(document).ready(function() {
+	
+	
+	
+		/*************************** initialize the calendar ************************/
+		
+		
+		
+		var calendar = $('#calendar').fullCalendar({
+			header: {
+				left: 'prev,next today',
+				center: 'title',
+				right: 'month,agendaWeek,agendaDay'
+			},
+			editable: true
+		});
+		
+		
+		
+		
+		/**************************** dragging & dropping ****************************/
+		
+		
+		
+		
+		// demonstrates an event that can be dragged on more than once
+		
+		var eventTitle1 = 'first event';
+		
+		$('#external-event1')
+			.text(eventTitle1)
+			.fullCalendarDraggable({
+			
+				helper: function() {
+					// generates the element that will be dragged
+					return $("<div class='helper-event'><a><span class='helper-event-title'></span></a></div>")
+						.find('span')
+							.text(eventTitle1)
+						.end();
+				},
+		
+				revert: true, // causes the original event to go back to its original position no matter what
+			
+				dayDrop: function(date, allDay) {
+					var event = {                                // data for the new event
+						title: eventTitle1,
+						start: date,
+						allDay: allDay
+					}
+					calendar.fullCalendar('renderEvent', event); // renders a "real" event on the calendar
+				}
+			
+			});
+			
+			
+			
+		
+		// demonstrates an event that can be dragged on ONLY once
+			
+		var eventTitle2 = 'second event';
+		
+		$('#external-event2')
+			.text(eventTitle2)
+			.fullCalendarDraggable({
+			
+				helper: function() {
+					// generates the element that will be dragged
+					return $("<div class='helper-event'><a><span class='helper-event-title'></span></a></div>")
+						.find('span')
+							.text(eventTitle2)
+						.end();
+				},
+		
+				revert: 'invalid', // causes the original event to slide back to its original position if it wasn't dropped on a day
+			
+				dayDrop: function(date, allDay) {
+					var event = {                                // data for the new event
+						title: eventTitle2,
+						start: date,
+						allDay: allDay
+					}
+					calendar.fullCalendar('renderEvent', event); // renders a "real" event on the calendar
+					$(this).remove();                            // removes the original event
+				}
+			
+			});
+		
+		
+		
+	});
+
+</script>
+</head>
+<body>
+
+<div id='sidebar'>
+<div id='external-event1' class='external-event'></div>
+<div id='external-event2' class='external-event'></div>
+</div>
+
+<div id='calendar'></div>
+
+</body>
+</html>

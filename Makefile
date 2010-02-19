@@ -7,7 +7,8 @@ JS_SRC_FILES =\
 	grid.js\
 	agenda.js\
 	view.js\
-	util.js
+	util.js\
+	fcdraggable.js
 	
 CSS_SRC_FILES =\
 	main.css\
@@ -38,7 +39,7 @@ zip:
 	@java -jar build/yuicompressor-2.4.2.jar -o build/fullcalendar/fullcalendar.min.js build/fullcalendar/fullcalendar.js
 	
 	@echo "building examples..."
-	@for f in build/fullcalendar/examples/*.html; do\
+	@for f in build/fullcalendar/examples/*.*; do\
 		sed -i -n '1h;1!H;$${;g;s/<!--\s*<src>.*<\/src>\s*-->\s*//g;p;}' $$f;\
 		sed -i -n '1h;1!H;$${;g;s/<!--\s*<dist>\s*//g;p;}' $$f;\
 		sed -i -n '1h;1!H;$${;g;s/<\/dist>\s*-->\s*//g;p;}' $$f;\

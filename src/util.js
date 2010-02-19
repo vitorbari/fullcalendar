@@ -402,16 +402,16 @@ function HoverMatrix(changeCallback) {
 		for (c=0; c<lefts.length && x>=lefts[c]; c++) ;
 		r = r >= tops.length ? -1 : r - 1;
 		c = c >= lefts.length ? -1 : c - 1;
+		if (origRow == undefined) {
+			origRow = r;
+			origCol = c;
+		}
 		if (r != currRow || c != currCol) {
 			currRow = r;
 			currCol = c;
 			if (r == -1 || c == -1) {
 				t.cell = null;
 			}else{
-				if (origRow == undefined) {
-					origRow = r;
-					origCol = c;
-				}
 				t.cell = {
 					row: r,
 					col: c,

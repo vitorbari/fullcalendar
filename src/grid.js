@@ -444,58 +444,85 @@ function Grid(element, options, methods) {
 	/* Event Dragging
 	-----------------------------------------------------------------------------*/
 	
+	var matrix;
 	
 	function draggableEvent(event, eventElement) {
 		if (!options.disableDragging && eventElement.draggable) {
-			var matrix;
 			eventElement.draggable({
 				zIndex: 9,
 				delay: 50,
 				opacity: view.option('dragOpacity'),
 				revertDuration: options.dragRevertDuration,
 				start: function(ev, ui) {
-					view.hideEvents(event, eventElement);
-					view.trigger('eventDragStart', eventElement, event, ev, ui);
-					matrix = new HoverMatrix(function(cell) {
-						eventElement.draggable('option', 'revert', !cell || !cell.rowDelta && !cell.colDelta);
-						if (cell) {
-							view.showOverlay(cell);
-						}else{
-							view.hideOverlay();
-						}
-					});
-					tbody.find('tr').each(function() {
-						matrix.row(this);
-					});
-					var tds = tbody.find('tr:first td');
-					if (rtl) {
-						tds = $(tds.get().reverse());
-					}
-					tds.each(function() {
-						matrix.col(this);
-					});
-					matrix.mouse(ev.pageX, ev.pageY);
+					view.eventDragStart(event, eventElement, ev, ui);
 				},
-				drag: function(ev) {
-					matrix.mouse(ev.pageX, ev.pageY);
+				drag: function(ev, ui) {
+					view.eventDrag(event, eventElement, ev, ui);
 				},
 				stop: function(ev, ui) {
-					view.hideOverlay();
-					view.trigger('eventDragStop', eventElement, event, ev, ui);
-					var cell = matrix.cell;
-					if (!cell || !cell.rowDelta && !cell.colDelta) {
-						if ($.browser.msie) {
-							eventElement.css('filter', ''); // clear IE opacity side-effects
-						}
-						view.showEvents(event, eventElement);
-					}else{
-						eventElement.find('a').removeAttr('href'); // prevents safari from visiting the link
-						view.eventDrop(this, event, cell.rowDelta*7+cell.colDelta*dis, 0, event.allDay, ev, ui);
-					}
+					view.eventDragStop(event, eventElement, ev, ui);
 				}
 			});
 		}
 	}
+	
+	view.eventDragStart = function(event, eventElement, ev, ui) {
+		if (event) {
+			view.trigger('eventDragStart', eventElement, event, ev, ui);
+			view.hideEvents(event, eventElement);
+		}else{
+			setOuterWidth(eventElement, colWidth);
+		}
+		matrix = new HoverMatrix(function(cell) {
+			if (event) {
+				eventElement.draggable('option', 'revert', !cell || !cell.rowDelta && !cell.colDelta);
+			}
+			if (cell) {
+				view.showOverlay(cell);
+			}else{
+				view.hideOverlay();
+			}
+		});
+		tbody.find('tr').each(function() {
+			matrix.row(this);
+		});
+		var tds = tbody.find('tr:first td');
+		if (rtl) {
+			tds = $(tds.get().reverse());
+		}
+		tds.each(function() {
+			matrix.col(this);
+		});
+		matrix.mouse(ev.pageX, ev.pageY);
+	};
+	
+	view.eventDrag = function(event, eventElement, ev) {
+		matrix.mouse(ev.pageX, ev.pageY);
+		return !!matrix.cell;
+	};
+	
+	view.eventDragStop = function(event, eventElement, ev, ui) {
+		if (event) {
+			view.trigger('eventDragStop', eventElement, event, ev, ui);
+		}
+		view.hideOverlay();
+		var cell = matrix.cell;
+		if (!cell || !cell.rowDelta && !cell.colDelta) {
+			if ($.browser.msie) {
+				eventElement.css('filter', ''); // clear IE opacity side-effects
+			}
+			if (event) {
+				view.showEvents(event, eventElement);
+			}
+			return false;
+		}else{
+			eventElement.find('a').removeAttr('href'); // prevents safari from visiting the link
+			if (event) {
+				view.eventDrop(eventElement[0], event, cell.rowDelta*7+cell.colDelta*dis, 0, event.allDay, ev, ui);
+			}
+			return [addDays(cloneDate(view.visStart), cell.row*7+cell.col*dis), true];
+		}
+	};
 	
 	
 	// event resizing w/ 'view' methods...

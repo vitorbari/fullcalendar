@@ -102,10 +102,10 @@ var viewMethods = {
 	},
 	
 	_eee: function(event, exceptElement, funcName) { // event-element-each
-		var elements = this.eventElementsByID[event._id],
+		var elements = this.eventElementsByID[event._id] || [], // ???
 			i, len = elements.length;
 		for (i=0; i<len; i++) {
-			if (elements[i][0] != exceptElement[0]) { // AHAHAHAHAHAHAHAH
+			if (!exceptElement || elements[i][0] != exceptElement[0]) { // AHAHAHAHAHAHAHAH
 				elements[i][funcName]();
 			}
 		}
@@ -119,7 +119,7 @@ var viewMethods = {
 		var view = this,
 			oldAllDay = event.allDay,
 			eventId = event._id;
-		view.moveEvents(view.eventsByID[eventId], dayDelta, minuteDelta, allDay);
+		view.moveEvents(view.eventsByID[eventId] || [], dayDelta, minuteDelta, allDay); // ???
 		view.trigger('eventDrop', e, event, dayDelta, minuteDelta, allDay, function() { // TODO: change docs
 			// TODO: investigate cases where this inverse technique might not work
 			view.moveEvents(view.eventsByID[eventId], -dayDelta, -minuteDelta, oldAllDay);

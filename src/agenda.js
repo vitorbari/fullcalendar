@@ -659,94 +659,134 @@ function Agenda(element, options, methods) {
 	
 	// when event starts out FULL-DAY
 	
+	var origPosition, origWidth,
+		resetElement,
+		allDay, //=true,
+		matrix,
+		eventElementOffsetTop;
+	
 	function draggableDayEvent(event, eventElement, isStart) {
 		if (!options.disableDragging && eventElement.draggable) {
-			var origPosition, origWidth,
-				resetElement,
-				allDay=true,
-				matrix;
 			eventElement.draggable({
 				zIndex: 9,
 				opacity: view.option('dragOpacity', 'month'), // use whatever the month view was using
 				revertDuration: options.dragRevertDuration,
 				start: function(ev, ui) {
-					view.hideEvents(event, eventElement);
-					view.trigger('eventDragStart', eventElement, event, ev, ui);
-					origPosition = eventElement.position();
-					origWidth = eventElement.width();
-					resetElement = function() {
-						if (!allDay) {
-							eventElement
-								.width(origWidth)
-								.height('')
-								.draggable('option', 'grid', null);
-							allDay = true;
-						}
-					};
-					matrix = new HoverMatrix(function(cell) {
-						eventElement.draggable('option', 'revert', !cell || !cell.rowDelta && !cell.colDelta);
-						if (cell) {
-							if (!cell.row) { // on full-days
-								resetElement();
-								view.showOverlay(cell);
-							}else{ // mouse is over bottom slots
-								if (isStart && allDay) {
-									// convert event to temporary slot-event
-									setOuterHeight(
-										eventElement.width(colWidth - 10), // don't use entire width
-										slotHeight * Math.round(
-											(event.end ? ((event.end - event.start)/MINUTE_MS) : options.defaultEventMinutes)
-											/options.slotMinutes)
-									);
-									eventElement.draggable('option', 'grid', [colWidth, 1]);
-									allDay = false;
-								}
-								view.hideOverlay();
-							}
-						}else{ // mouse is outside of everything
-							view.hideOverlay();
-						}
-					});
-					matrix.row(head.find('td'));
-					bg.find('td').each(function() {
-						matrix.col(this);
-					});
-					matrix.row(body);
-					matrix.mouse(ev.pageX, ev.pageY);
+					dayEventDragStart(event, eventElement, isStart, ev, ui);
 				},
 				drag: function(ev, ui) {
-					matrix.mouse(ev.pageX, ev.pageY);
+					dayEventDrag(event, eventElement, isStart, ev, ui);
 				},
 				stop: function(ev, ui) {
-					view.hideOverlay();
-					view.trigger('eventDragStop', eventElement, event, ev, ui);
-					var cell = matrix.cell,
-						dayDelta = dis * (
-							allDay ? // can't trust cell.colDelta when using slot grid
-							(cell ? cell.colDelta : 0) :
-							Math.floor((ui.position.left - origPosition.left) / colWidth)
-						);
-					if (!cell || !dayDelta && !cell.rowDelta) {
-						// over nothing (has reverted)
-						resetElement();
-						if ($.browser.msie) {
-							eventElement.css('filter', ''); // clear IE opacity side-effects
-						}
-						view.showEvents(event, eventElement);
-					}else{
-						eventElement.find('a').removeAttr('href'); // prevents safari from visiting the link
-						view.eventDrop(
-							this, event, dayDelta,
-							allDay ? 0 : // minute delta
-								Math.round((eventElement.offset().top - bodyContent.offset().top) / slotHeight)
-								* options.slotMinutes
-								+ minMinute
-								- (event.start.getHours() * 60 + event.start.getMinutes()),
-							allDay, ev, ui
-						);
-					}
+					dayEventDragStop(event, eventElement, isStart, ev, ui);
 				}
 			});
+		}
+	}
+	
+	function dayEventDragStart(event, eventElement, isStart, ev, ui) {
+		allDay = true;
+		if (event) {
+			view.hideEvents(event, eventElement);
+			view.trigger('eventDragStart', eventElement, event, ev, ui);
+		}else{
+			setOuterWidth(eventElement, colWidth);
+		}
+		origPosition = eventElement.position();
+		origWidth = eventElement.width();
+		resetElement = function() {
+			if (!allDay) {
+				eventElement
+					.width(origWidth)
+					.height('')
+					.draggable('option', 'grid', null);
+				allDay = true;
+			}
+		};
+		matrix = new HoverMatrix(function(cell) {
+			if (event) {
+				eventElement.draggable('option', 'revert', !cell || !cell.rowDelta && !cell.colDelta);
+			}
+			if (cell) {
+				if (!cell.row) { // on full-days
+					resetElement();
+					view.showOverlay(cell);
+				}else{ // mouse is over bottom slots
+					if (isStart && allDay) {
+						// convert event to temporary slot-event
+						setOuterHeight(
+							eventElement.width(colWidth - 10), // don't use entire width
+							slotHeight * Math.round(
+								(event && event.end ? ((event.end - event.start)/MINUTE_MS) : options.defaultEventMinutes)
+								/options.slotMinutes)
+						);
+						if (event) {
+							eventElement.draggable('option', 'grid', [colWidth, 1]);
+						}
+						allDay = false;
+					}
+					if (event) {
+						view.hideOverlay();
+					}else{
+						view.showOverlay(cell);
+					}
+				}
+			}else{ // mouse is outside of everything
+				view.hideOverlay();
+			}
+		});
+		matrix.row(head.find('td'));
+		bg.find('td').each(function() {
+			matrix.col(this);
+		});
+		matrix.row(body);
+		matrix.mouse(ev.pageX, ev.pageY);
+	}
+	
+	function dayEventDrag(event, eventElement, isStart, ev, ui) {
+		eventElementOffsetTop = eventElement.offset().top;
+		matrix.mouse(ev.pageX, ev.pageY);
+		return !!matrix.cell;
+	}
+	
+	function dayEventDragStop(event, eventElement, isStart, ev, ui) {
+		view.hideOverlay();
+		if (event) {
+			view.trigger('eventDragStop', eventElement, event, ev, ui);
+		}
+		var cell = matrix.cell,
+			dayDelta = dis * (
+				allDay ? // can't trust cell.colDelta when using slot grid
+				(cell ? cell.colDelta : 0) :
+				Math.floor((ui.position.left - origPosition.left) / colWidth)
+			);
+		if (!cell || !dayDelta && !cell.rowDelta) {
+			// over nothing (has reverted)
+			resetElement();
+			if ($.browser.msie) {
+				eventElement.css('filter', ''); // clear IE opacity side-effects
+			}
+			if (event) {
+				view.showEvents(event, eventElement);
+			}
+			return false;
+		}else{
+			eventElement.find('a').removeAttr('href'); // prevents safari from visiting the link
+			var minutes = Math.round((eventElementOffsetTop - bodyContent.offset().top) / slotHeight) * options.slotMinutes;
+			if (event) {
+				view.eventDrop(
+					eventElement[0], event, dayDelta,
+					allDay ? 0 : // minute delta
+						minutes
+						+ minMinute
+						- (event.start.getHours() * 60 + event.start.getMinutes()),
+					allDay, ev, ui
+				);
+			}
+			var d = cloneDate(view.visStart);
+			addDays(d, cell.col);
+			addMinutes(d, minutes);
+			return [d, allDay];
 		}
 	}
 	
@@ -754,13 +794,16 @@ function Agenda(element, options, methods) {
 	
 	// when event starts out IN TIMESLOTS
 	
+	var prevSlotDelta, slotDelta;
+	
+	/*var origPosition,
+		resetElement,
+		prevSlotDelta, slotDelta,
+		allDay=false,
+		matrix;*/
+	
 	function draggableSlotEvent(event, eventElement, timeElement) {
 		if (!options.disableDragging && eventElement.draggable) {
-			var origPosition,
-				resetElement,
-				prevSlotDelta, slotDelta,
-				allDay=false,
-				matrix;
 			eventElement.draggable({
 				zIndex: 9,
 				scroll: false,
@@ -769,95 +812,124 @@ function Agenda(element, options, methods) {
 				opacity: view.option('dragOpacity'),
 				revertDuration: options.dragRevertDuration,
 				start: function(ev, ui) {
-					view.hideEvents(event, eventElement);
-					view.trigger('eventDragStart', eventElement, event, ev, ui);
-					if ($.browser.msie) {
-						eventElement.find('span.fc-event-bg').hide(); // nested opacities mess up in IE, just hide
-					}
-					origPosition = eventElement.position();
-					resetElement = function() {
-						// convert back to original slot-event
-						if (allDay) {
-							timeElement.css('display', ''); // show() was causing display=inline
-							eventElement.draggable('option', 'grid', [colWidth, slotHeight]);
-							allDay = false;
-						}
-					};
-					prevSlotDelta = 0;
-					matrix = new HoverMatrix(function(cell) {
-						eventElement.draggable('option', 'revert', !cell);
-						if (cell) {
-							if (!cell.row && options.allDaySlot) { // over full days
-								if (!allDay) {
-									// convert to temporary all-day event
-									allDay = true;
-									timeElement.hide();
-									eventElement.draggable('option', 'grid', null);
-								}
-								view.showOverlay(cell);
-							}else{ // on slots
-								resetElement();
-								view.hideOverlay();
-							}
-						}else{
-							view.hideOverlay();
-						}
-					});
-					if (options.allDaySlot) {
-						matrix.row(head.find('td'));
-					}
-					bg.find('td').each(function() {
-						matrix.col(this);
-					});
-					matrix.row(body);
-					matrix.mouse(ev.pageX, ev.pageY);
+					slotEventDragStart(event, eventElement, timeElement, ev, ui);
 				},
 				drag: function(ev, ui) {
-					slotDelta = Math.round((ui.position.top - origPosition.top) / slotHeight);
-					if (slotDelta != prevSlotDelta) {
-						if (!allDay) {
-							// update time header
-							var minuteDelta = slotDelta*options.slotMinutes,
-								newStart = addMinutes(cloneDate(event.start), minuteDelta),
-								newEnd;
-							if (event.end) {
-								newEnd = addMinutes(cloneDate(event.end), minuteDelta);
-							}
-							timeElement.text(formatDates(newStart, newEnd, view.option('timeFormat')));
-						}
-						prevSlotDelta = slotDelta;
-					}
-					matrix.mouse(ev.pageX, ev.pageY);
+					slotEventDrag(event, eventElement, timeElement, ev, ui);
 				},
 				stop: function(ev, ui) {
-					view.hideOverlay();
-					view.trigger('eventDragStop', eventElement, event, ev, ui);
-					var cell = matrix.cell,
-						dayDelta = dis * (
-							allDay ? // can't trust cell.colDelta when using slot grid
-							(cell ? cell.colDelta : 0) : 
-							Math.floor((ui.position.left - origPosition.left) / colWidth)
-						);
-					if (!cell || !slotDelta && !dayDelta) {
-						resetElement();
-						if ($.browser.msie) {
-							eventElement
-								.css('filter', '') // clear IE opacity side-effects
-								.find('span.fc-event-bg').css('display', ''); // .show() made display=inline
-						}
-						eventElement.css(origPosition); // sometimes fast drags make event revert to wrong position
-						view.showEvents(event, eventElement);
-					}else{
-						view.eventDrop(
-							this, event, dayDelta,
-							allDay ? 0 : slotDelta * options.slotMinutes, // minute delta
-							allDay, ev, ui
-						);
-					}
+					slotEventDragStop(event, eventElement, timeElement, ev, ui);
 				}
 			});
 		}
 	}
+	
+	function slotEventDragStart(event, eventElement, timeElement, ev, ui) {
+		allDay = false;
+		view.hideEvents(event, eventElement);
+		view.trigger('eventDragStart', eventElement, event, ev, ui);
+		if ($.browser.msie) {
+			eventElement.find('span.fc-event-bg').hide(); // nested opacities mess up in IE, just hide
+		}
+		origPosition = eventElement.position();
+		resetElement = function() {
+			// convert back to original slot-event
+			if (allDay) {
+				timeElement.css('display', ''); // show() was causing display=inline
+				eventElement.draggable('option', 'grid', [colWidth, slotHeight]);
+				allDay = false;
+			}
+		};
+		prevSlotDelta = 0;
+		matrix = new HoverMatrix(function(cell) {
+			eventElement.draggable('option', 'revert', !cell);
+			if (cell) {
+				if (!cell.row && options.allDaySlot) { // over full days
+					if (!allDay) {
+						// convert to temporary all-day event
+						allDay = true;
+						timeElement.hide();
+						eventElement.draggable('option', 'grid', null);
+					}
+					view.showOverlay(cell);
+				}else{ // on slots
+					resetElement();
+					view.hideOverlay();
+				}
+			}else{
+				view.hideOverlay();
+			}
+		});
+		if (options.allDaySlot) {
+			matrix.row(head.find('td'));
+		}
+		bg.find('td').each(function() {
+			matrix.col(this);
+		});
+		matrix.row(body);
+		matrix.mouse(ev.pageX, ev.pageY);
+	}
+	
+	function slotEventDrag(event, eventElement, timeElement, ev, ui) {
+		slotDelta = Math.round((ui.position.top - origPosition.top) / slotHeight);
+		if (slotDelta != prevSlotDelta) {
+			if (!allDay) {
+				// update time header
+				var minuteDelta = slotDelta*options.slotMinutes,
+					newStart = addMinutes(cloneDate(event.start), minuteDelta),
+					newEnd;
+				if (event.end) {
+					newEnd = addMinutes(cloneDate(event.end), minuteDelta);
+				}
+				timeElement.text(formatDates(newStart, newEnd, view.option('timeFormat')));
+			}
+			prevSlotDelta = slotDelta;
+		}
+		matrix.mouse(ev.pageX, ev.pageY);
+	}
+	
+	function slotEventDragStop(event, eventElement, timeElement, ev, ui) {
+		view.hideOverlay();
+		view.trigger('eventDragStop', eventElement, event, ev, ui);
+		var cell = matrix.cell,
+			dayDelta = dis * (
+				allDay ? // can't trust cell.colDelta when using slot grid
+				(cell ? cell.colDelta : 0) : 
+				Math.floor((ui.position.left - origPosition.left) / colWidth)
+			);
+		if (!cell || !slotDelta && !dayDelta) {
+			resetElement();
+			if ($.browser.msie) {
+				eventElement
+					.css('filter', '') // clear IE opacity side-effects
+					.find('span.fc-event-bg').css('display', ''); // .show() made display=inline
+			}
+			eventElement.css(origPosition); // sometimes fast drags make event revert to wrong position
+			view.showEvents(event, eventElement);
+		}else{
+			view.eventDrop(
+				eventElement[0], event, dayDelta,
+				allDay ? 0 : slotDelta * options.slotMinutes, // minute delta
+				allDay, ev, ui
+			);
+		}
+	}
+	
+	
+	view.eventDragStart = function(event, eventElement, ev, ui) {
+		dayEventDragStart(event, eventElement, true, ev, ui);
+	};
+	
+	view.eventDrag = function(event, eventElement, ev, ui) {
+		return dayEventDrag(event, eventElement, true, ev, ui);
+	};
+	
+	view.eventDragStop = function(event, eventElement, ev, ui) {
+		return dayEventDragStop(event, eventElement, true, ev, ui);
+	};
+	
+	
+	
 	
 	
 	

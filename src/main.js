@@ -1,6 +1,7 @@
 
 var fc = $.fullCalendar = {};
 var views = fc.views = {};
+fc.instances = [];
 
 
 /* Defaults
@@ -158,6 +159,9 @@ $.fn.fullCalendar = function(options) {
 			viewInstances = {};
 			
 			
+		fc.instances.push(element);
+			
+			
 			
 		if (options.isRTL) {
 			element.addClass('fc-rtl');
@@ -190,7 +194,7 @@ $.fn.fullCalendar = function(options) {
 				
 				var oldView = view,
 					newViewElement;
-					
+				
 				if (oldView) {
 					if (oldView.eventsChanged) {
 						eventsDirty();
@@ -613,7 +617,15 @@ $.fn.fullCalendar = function(options) {
 			
 			refetchEvents: function() {
 				fetchEvents(eventsChanged);
+			},
+			
+			
+			
+			trigger: function(evname) {
+				return view[evname].apply(view, $.makeArray(arguments).slice(1));
 			}
+			
+			
 			
 		};
 		
@@ -827,4 +839,5 @@ function normalizeEvent(event, options) {
 	}
 }
 // TODO: if there is no title or start date, return false to indicate an invalid event
+// TODO: should return the new event also
 
