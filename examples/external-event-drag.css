@@ -13,7 +13,7 @@ body {
 	text-align: left;
 	}
 
-#calendar {
+#calendar, #calendar1, #calendar2 {
 	float: left;
 	width: 800px;
 	margin: 0 auto;

@@ -22,21 +22,27 @@ $.fn.fullCalendarDraggable = function(options) {
 			.bind('dragstart', function(ev, ui) {
 				element.css('visibility', 'hidden');
 				$.each(fc.instances, function() {
-					this.fullCalendar('trigger', 'eventDragStart', null, ui.helper, ev, ui);
+					if (!options.calendarSelector || this.is(options.calendarSelector)) {
+						this.fullCalendar('trigger', 'eventDragStart', null, ui.helper, ev, ui);
+					}
 				});
 				origRevertDuration = element.draggable('option', 'revertDuration') || 500;
 			})
 			.bind('drag', function(ev, ui) {
 				var res;
 				$.each(fc.instances, function() {
-					res = this.fullCalendar('trigger', 'eventDrag', null, ui.helper, ev, ui) || res;
+					if (!options.calendarSelector || this.is(options.calendarSelector)) {
+						res = this.fullCalendar('trigger', 'eventDrag', null, ui.helper, ev, ui) || res;
+					}
 				});
 				element.draggable('option', 'revertDuration', res ? validRevertDuration : origRevertDuration);
 			})
 			.bind('dragstop', function(ev, ui) {
 				var res;
 				$.each(fc.instances, function() {
-					res = this.fullCalendar('trigger', 'eventDragStop', null, ui.helper, ev, ui) || res;
+					if (!options.calendarSelector || this.is(options.calendarSelector)) {
+						res = this.fullCalendar('trigger', 'eventDragStop', null, ui.helper, ev, ui) || res;
+					}
 				});
 				if (res && options.dayDrop) {
 					options.dayDrop.call(_element, res[0], res[1], ev, ui);
