@@ -760,7 +760,7 @@ function Agenda(element, options, methods) {
 				(cell ? cell.colDelta : 0) :
 				Math.floor((ui.position.left - origPosition.left) / colWidth)
 			);
-		if (!cell || !dayDelta && !cell.rowDelta) {
+		if (!cell || event && !dayDelta && !cell.rowDelta) { // when no event, triggering pretend dragging, deltas dont matter 
 			// over nothing (has reverted)
 			resetElement();
 			if ($.browser.msie) {

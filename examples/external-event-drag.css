@@ -25,6 +25,7 @@ body {
 	
 .external-event {
 	position: relative;
+	top: 500px;
 	z-index: 100;
 	background: green;
 	margin: 0 0 10px;

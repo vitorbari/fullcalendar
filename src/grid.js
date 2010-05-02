@@ -507,7 +507,7 @@ function Grid(element, options, methods) {
 		}
 		view.hideOverlay();
 		var cell = matrix.cell;
-		if (!cell || !cell.rowDelta && !cell.colDelta) {
+		if (!cell || event && !cell.rowDelta && !cell.colDelta) { // if !event, means dragging fake event
 			if ($.browser.msie) {
 				eventElement.css('filter', ''); // clear IE opacity side-effects
 			}
