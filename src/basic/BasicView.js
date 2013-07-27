@@ -198,7 +198,7 @@ function BasicView(element, calendar, viewName) {
 				        ">" + 
 				        "<div>";
 				if (showNumbers) {
-					html += "<div class='fc-day-number'>" + cellDate.getDate() + "</div>";
+					html += "<div class='fc-day-number'>" + cellDate.getDate() + '/' + (cellDate.getMonth() + 1) + "</div>";
 				}
 				html += "<div class='fc-day-content'>" +
 				        "<div style='position:relative'>&nbsp;</div>" +
