@@ -304,8 +304,32 @@ function setDayID(cell, date) {
 	});
 }
 
+function getSkinCssWithResource(event, resource) {
+
+	var source = event.source || {};
+	var eventColor = resource.color;
+	var backgroundColor = eventColor;
+	var borderColor = eventColor;
+	var textColor = resource.textColor;
+	var statements = [];
+	if (backgroundColor) {
+		statements.push('background-color:' + backgroundColor);
+	}
+	if (borderColor) {
+		statements.push('border-color:' + borderColor);
+	}
+	if (textColor) {
+		statements.push('color:' + textColor);
+	}
+	return statements.join(';');
+}
 
 function getSkinCss(event, opt) {
+	
+	if (event.resource) {
+		return getSkinCssWithResource(event, event.resource);
+	};
+
 	var source = event.source || {};
 	var eventColor = event.color;
 	var sourceColor = source.color;

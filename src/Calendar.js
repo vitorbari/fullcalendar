@@ -391,7 +391,7 @@ function Calendar(element, options, eventSources, eventResources) {
 
 		
 	function removeEventResource(resourceId) {
-		var updatedResources = []
+		var updatedResources = [];
 		for(var i = 0; i < eventResources.length; i++) {
 			if(eventResources[i].id != resourceId) {
 				updatedResources.push(eventResources[i]);
